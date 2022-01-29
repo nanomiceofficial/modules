@@ -1,4 +1,4 @@
-export default class Plugin {
+class Plugin {
     constructor(options) {
         if (new.target === Plugin)
             throw new TypeError('Cannot construct Plugin instances directly')
@@ -6,3 +6,5 @@ export default class Plugin {
         this.enabled = options?.enabled !== false
     }
 }
+
+export default Plugin

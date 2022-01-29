@@ -1,5 +1,6 @@
 import EN from './translations/en'
 import RU from './translations/ru'
+import { format } from './format'
 
 export default {
     type: {
@@ -35,5 +36,9 @@ export default {
         }
 
         return value
+    },
+
+    format: function(key, type = 0, f) {
+        return format(this.get(key, type), f)
     }
 }

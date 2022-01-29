@@ -8,7 +8,7 @@ const defaultOptions = {
     admins: []
 }
 
-export default class UI extends Plugin {
+class UI extends Plugin {
     constructor(options) {
         super(options)
 
@@ -167,3 +167,5 @@ export default class UI extends Plugin {
         return raw
     }
 }
+
+export default UI

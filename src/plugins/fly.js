@@ -2,7 +2,7 @@ import Plugin from './plugin'
 
 const defaultOptions = {}
 
-export default class Fly extends Plugin {
+class Fly extends Plugin {
     constructor(options) {
         super(options)
 
@@ -25,3 +25,5 @@ export default class Fly extends Plugin {
             nm.movePlayer(playerName, 0, 0, true, 0, -50, false)
     }
 }
+
+export default Fly

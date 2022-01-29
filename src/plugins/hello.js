@@ -1,10 +1,9 @@
 import Plugin from './plugin'
 import locale from '../utils/locale'
-import { format } from '../utils/format'
 
 const defaultOptions = {}
 
-export default class Hello extends Plugin {
+class Hello extends Plugin {
     constructor(options) {
         super(options)
 
@@ -13,10 +12,12 @@ export default class Hello extends Plugin {
     }
 
     onNewPlayer(playerName) {
-        nm.chatMessage(format(locale.get('hello/joinedRoom', locale.type.all), playerName))
+        nm.chatMessage(locale.format('hello/joinedRoom', locale.type.all, playerName))
     }
 
     onPlayerLeft(playerName) {
-        nm.chatMessage(format(locale.get('hello/leftRoom', locale.type.all), playerName))
+        nm.chatMessage(locale.format('hello/leftRoom', locale.type.all, playerName))
     }
 }
+
+export default Hello

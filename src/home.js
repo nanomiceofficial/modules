@@ -10,7 +10,7 @@ export default class Home {
         })
     }
 
-    eventRegister() {
+    onRegister() {
         this.owner = ''
         this.admins = []
 

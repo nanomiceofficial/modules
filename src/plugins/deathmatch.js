@@ -5,7 +5,7 @@ import { format } from '../utils/format'
 
 const defaultOptions = {}
 
-export default class Deathmatch extends Plugin {
+class Deathmatch extends Plugin {
     constructor(options) {
         super(options)
 
@@ -174,3 +174,5 @@ export default class Deathmatch extends Plugin {
             nm.setGameTime(10)
     }
 }
+
+export default Deathmatch

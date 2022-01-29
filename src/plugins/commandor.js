@@ -4,7 +4,7 @@ import { format } from '../utils/format'
 
 const defaultOptions = {}
 
-export default class Commandor extends Plugin {
+class Commandor extends Plugin {
     constructor(options) {
         super(options)
 
@@ -19,12 +19,12 @@ export default class Commandor extends Plugin {
         this.disableautoshaman = false
         this.lastRespawnAt = 0
 
-        for (let command of this.commands)
+        for (const command of this.commands)
             nm.system.disableChatCommandDisplay(command, true)
     }
 
     onUnregister() {
-        for (let command of this.commands)
+        for (const command of this.commands)
             nm.system.disableChatCommandDisplay(command, false)
 
         nm.disableAutoNewGame(false)
@@ -167,3 +167,5 @@ export default class Commandor extends Plugin {
         this.lastRespawnAt = Date.now()
     }
 }
+
+export default Commandor
