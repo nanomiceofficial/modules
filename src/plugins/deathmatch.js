@@ -1,46 +1,49 @@
-import Plugin from "./plugin"
-import Locale from "../utils/locale"
+import Plugin from './plugin'
+import locale from '../utils/locale'
+import { getAlivePlayers } from '../utils/extensions'
+import { format } from '../utils/format'
 
-let defaultOptions = {}
+const defaultOptions = {}
+
 export default class Deathmatch extends Plugin {
     constructor(options) {
         super(options)
 
-        this.name = "deathmatch"
+        this.name = 'deathmatch'
         this.options = { ...options, ...defaultOptions }
     }
 
-    eventRegister() {
+    onRegister() {
         this.init = false
         this.started = false
         this.players = {}
         this.keys = [0x28, 0x53, 0x20]
-        this.maps = ["@4075355", "@4074458", "@4074459", "@4074460", "@4074461", "@4074464", "@4074438", "@4074439", "@4074483", "@4074496", "@4074494",
-            "@4074493", "@4076664,4076668", "@4076666", "@4076781", "@4076772", "@4076764", "@4076748", "@4074583", "@4074586", "@4074587", "@4076836",
-            "@4076839", "@4076840", "@4076850", "@4076951", "@4077869", "@4077505", "@4078343", "@4078349", "@4077872", "@4077953", "@4077521", "@4076872",
-            "@4076962", "@4077854", "@4077468", "@4077503", "@4077970", "@4077049", "@4078272", "@4077962", "@4077518", "@4076852", "@4077876", "@4077500",
-            "@4077967", "@4078347", "@4077875", "@4077861", "@4078273", "@4076855", "@4077974", "@4077883", "@4076853", "@5000723", "@5000540", "@5000524",
-            "@5000527", "@5000530", "@4077881", "@4078344", "@4077648", "@5001225", "@5000761", "@5000756", "@5000757", "@5003258", "@5002857", "@5001668",
-            "@5001664", "@5001717", "@5001661", "@5001408", "@5001401"]
+        this.maps = ['@4075355', '@4074458', '@4074459', '@4074460', '@4074461', '@4074464', '@4074438', '@4074439', '@4074483', '@4074496', '@4074494',
+            '@4074493', '@4076664,4076668', '@4076666', '@4076781', '@4076772', '@4076764', '@4076748', '@4074583', '@4074586', '@4074587', '@4076836',
+            '@4076839', '@4076840', '@4076850', '@4076951', '@4077869', '@4077505', '@4078343', '@4078349', '@4077872', '@4077953', '@4077521', '@4076872',
+            '@4076962', '@4077854', '@4077468', '@4077503', '@4077970', '@4077049', '@4078272', '@4077962', '@4077518', '@4076852', '@4077876', '@4077500',
+            '@4077967', '@4078347', '@4077875', '@4077861', '@4078273', '@4076855', '@4077974', '@4077883', '@4076853', '@5000723', '@5000540', '@5000524',
+            '@5000527', '@5000530', '@4077881', '@4078344', '@4077648', '@5001225', '@5000761', '@5000756', '@5000757', '@5003258', '@5002857', '@5001668',
+            '@5001664', '@5001717', '@5001661', '@5001408', '@5001401']
 
-        nm.DisableAutoShaman()
-        nm.DisableAutoNewGame()
-        nm.DisableAutoTimeLeft()
+        nm.disableAutoShaman()
+        nm.disableAutoNewGame()
+        nm.disableAutoTimeLeft()
 
-        nm.Room.GetPlayers().forEach((player) => {
-            this.eventNewPlayer(player.Name)
+        nm.room.getPlayers().forEach(player => {
+            this.onNewPlayer(player.name)
         })
 
-        nm.NewGame(this.maps[Math.floor(Math.random() * this.maps.length)])
+        nm.newGame(this.maps[Math.floor(Math.random() * this.maps.length)])
     }
 
-    eventUnregister() {
-        nm.DisableAutoShaman(false)
-        nm.DisableAutoNewGame(false)
-        nm.DisableAutoTimeLeft(false)
+    onUnregister() {
+        nm.disableAutoShaman(false)
+        nm.disableAutoNewGame(false)
+        nm.disableAutoTimeLeft(false)
     }
 
-    eventNewGame() {
+    onNewGame() {
         this.started = false
 
         for (let player of this.players) {
@@ -48,10 +51,10 @@ export default class Deathmatch extends Plugin {
             player.shootAt = Date.now()
         }
 
-        nm.SetUIShamanName("<N>Deathmatch")
+        nm.setUIShamanName('<N>Deathmatch')
     }
 
-    eventNewPlayer(playerName) {
+    onNewPlayer(playerName) {
         this.players[playerName] = {
             offset: {
                 x: 2,
@@ -62,72 +65,69 @@ export default class Deathmatch extends Plugin {
             shootAt: Date.now(),
         }
 
-        for (let key of this.keys) {
-            nm.BindKeyboard(playerName, key, true, true)
+        for (const key of this.keys) {
+            nm.bindKeyboard(playerName, key, true, true)
         }
 
-        nm.SetUIShamanName("<N>Deathmatch", playerName)
+        nm.setUIShamanName('<N>Deathmatch', playerName)
     }
 
-    eventPlayerDied(playerName) {
-        if (this.players[playerName] == undefined) {
+    onPlayerDied(playerName) {
+        if (this.players[playerName] === undefined)
             return
-        }
-        let alivePlayers = nm.Extensions.GetAlivePlayers()
-        nm.SetUIShamanName("<N>Deathmatch: <V>" + alivePlayers.length.toString() + "</V> в живых")
+
+        const alivePlayers = getAlivePlayers()
+        nm.setUIShamanName('<N>Deathmatch: <V>' + alivePlayers.length.toString() + '</V> в живых')
     }
 
-    eventPlayerLeft(playerName) {
+    onPlayerLeft(playerName) {
         delete this.players[playerName]
     }
 
-    eventKeyboard(playerName, keyCode, down, posX, posY) {
-        if (!this.started || this.players[playerName] == undefined) {
+    onKeyboardInput(playerName, keyCode, down, posX, posY) {
+        if (!this.started || this.players[playerName] === undefined)
             return
-        }
 
         let player = this.players[playerName]
-        let roomPlayer = nm.Room.GetPlayer(playerName)
-        if (roomPlayer.IsDead) {
+        let roomPlayer = nm.room.getPlayer(playerName)
+        if (roomPlayer.isDead)
             return
-        }
 
-        if (keyCode == 0x28 || keyCode == 0x53 || keyCode == 0x20) {
+        if (keyCode === 0x28 || keyCode === 0x53 || keyCode === 0x20) {
             if (player.shootAt < (Date.now() - 800)) {
                 player.shootAt = Date.now()
 
-                if (player.cannonID !== 0) {
-                    nm.RemoveObject(player.cannonID)
-                }
+                if (player.cannonID !== 0)
+                    nm.removeObject(player.cannonID)
 
-                var posX = roomPlayer.Turn == 0 ? (posX - player.offset.x) : (posX + player.offset.x)
-                var posY = posY + player.offset.y
-                var angle = roomPlayer.Turn == 0 ? 270 : 90
+                const x = roomPlayer.turn === 0 ? (posX - player.offset.x) : (posX + player.offset.x)
+                const y = posY + player.offset.y
+                const angle = roomPlayer.turn === 0 ? 270 : 90
 
-                if (player.cannonType == 0)
-                    player.cannonID = nm.AddShamanObject(17, posX, posY, angle, 0, 0, false)
+                if (player.cannonType === 0)
+                    player.cannonID = nm.addShamanObject(17, x, y, angle, 0, 0, false)
                 else
-                    player.cannonID = nm.AddShamanObject(1700 + player.cannonType, posX, posY, angle, 0, 0, false)
+                    player.cannonID = nm.addShamanObject(1700 + player.cannonType, x, y, angle, 0, 0, false)
             }
         }
     }
 
-    eventChatCommand(playerName, command) {
-        if (this.players[playerName] == undefined) {
+    onChatCommand(playerName, command) {
+        if (this.players[playerName] === undefined)
             return
-        }
 
-        let player = this.players[playerName]
-        let args = command.split(" ")
+        const player = this.players[playerName]
+        const args = command.split(' ')
         switch (args[0]) {
-            case "offset":
-            case "off":
-                if (args.length == 0) {
-                    nm.ChatMessage(nm.Extensions.Format(Locale.get("deathmatch/offset", Locale.type.self), player.offset.x, player.offset.y), playerName)
+            case 'offset':
+            case 'off':
+                if (args.length === 0) {
+                    nm.chatMessage(format(locale.get('deathmatch/offset', locale.type.self), player.offset.x, player.offset.y), playerName)
                     break
                 }
+                
                 if (args.length !== 3) {
-                    nm.ChatMessage(nm.Extensions.Format(Locale.get("deathmatch/use", Locale.type.self), "!off x(-100-100) y(-100-100)"), playerName)
+                    nm.chatMessage(format(locale.get('deathmatch/use', locale.type.self), '!off x(-100-100) y(-100-100)'), playerName)
                     break
                 }
 
@@ -139,11 +139,11 @@ export default class Deathmatch extends Plugin {
                 if (Math.abs(y) >= 1 && Math.abs(y) <= 100)
                     player.offset.y = y
 
-                nm.ChatMessage(nm.Extensions.Format(Locale.get("deathmatch/offset", Locale.type.self), player.offset.x, player.offset.y), playerName)
+                nm.chatMessage(format(locale.get('deathmatch/offset', locale.type.self), player.offset.x, player.offset.y), playerName)
                 break
-            case "ct":
+            case 'ct':
                 if (args.length !== 2) {
-                    nm.ChatMessage(nm.Extensions.Format(Locale.get("deathmatch/use", Locale.type.self), "!ct id(1-12)"), playerName)
+                    nm.chatMessage(format(locale.get('deathmatch/use', locale.type.self), '!ct id(1-12)'), playerName)
                     break
                 }
 
@@ -153,25 +153,24 @@ export default class Deathmatch extends Plugin {
                 }
 
                 break
-            case "help":
-                nm.ChatMessage(nm.Extensions.Format(Locale.get("deathmatch/use", Locale.type.self), "!off x(-100-100) y(-100-100)"), playerName)
-                nm.ChatMessage(nm.Extensions.Format(Locale.get("deathmatch/use", Locale.type.self), "!ct id(1-12)"), playerName)
+            case 'help':
+                nm.chatMessage(format(locale.get('deathmatch/use', locale.type.self), '!off x(-100-100) y(-100-100)'), playerName)
+                nm.chatMessage(format(locale.get('deathmatch/use', locale.type.self), '!ct id(1-12)'), playerName)
                 break
         }
     }
 
-    eventLoop(time, remaining) {
+    onLoop(time, remaining) {
         if (time >= 3000 && !this.started) {
             this.started = true
         }
 
         if (remaining >= 500000 || remaining <= 0) {
-            nm.NewGame(this.maps[Math.floor(Math.random() * this.maps.length - 1)])
+            nm.newGame(this.maps[Math.floor(Math.random() * this.maps.length - 1)])
             return
         }
 
-        if (remaining > 10000 && nm.Extensions.GetAlivePlayers().length <= 1) {
-            nm.SetGameTime(10)
-        }
+        if (remaining > 10000 && getAlivePlayers().length <= 1)
+            nm.setGameTime(10)
     }
 }

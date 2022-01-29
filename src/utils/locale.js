@@ -1,5 +1,5 @@
-import EN from "./translations/en"
-import RU from "./translations/ru"
+import EN from './translations/en'
+import RU from './translations/ru'
 
 export default {
     type: {
@@ -10,8 +10,8 @@ export default {
 
     get: function (key, type = 0) {
         let locale
-        switch (nm.Room.CommunityName) {
-            case "RU":
+        switch (nm.room.communityName) {
+            case 'RU':
                 locale = RU
                 break
             default:
@@ -20,8 +20,8 @@ export default {
         }
 
         let value
-        for (let part of key.split("/")) {
-            if (value == undefined)
+        for (let part of key.split('/')) {
+            if (value === undefined)
                 value = locale[part]
             else
                 value = value[part]
@@ -29,7 +29,7 @@ export default {
 
         switch (type) {
             case this.type.all:
-                return `<font color="#AAAAAA">Ξ [${locale["home"]}] ${value}</font>`
+                return `<font color='#AAAAAA'>Ξ [${locale['home']}] ${value}</font>`
             case this.type.self:
                 return `<J># <BL>${value}`
         }

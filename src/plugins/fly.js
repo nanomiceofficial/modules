@@ -1,27 +1,27 @@
-import Plugin from "./plugin"
+import Plugin from './plugin'
 
-let defaultOptions = {}
+const defaultOptions = {}
+
 export default class Fly extends Plugin {
     constructor(options) {
         super(options)
 
-        this.name = "fly"
+        this.name = 'fly'
         this.options = { ...options, ...defaultOptions }
     }
 
-    eventRegister() {
-        nm.Room.GetPlayers().forEach((player) => {
-            this.eventNewPlayer(player.Name)
+    onRegister() {
+        nm.room.getPlayers().forEach(player => {
+            this.onNewPlayer(player.name)
         })
     }
 
-    eventNewPlayer(playerName) {
-        nm.BindKeyboard(playerName, 0x20, true, true)
+    onNewPlayer(playerName) {
+        nm.bindKeyboard(playerName, 0x20, true, true)
     }
 
-    eventKeyboard(playerName, keyCode, down, posX, posY) {
-        if (keyCode === 0x20) {
-            nm.MovePlayer(playerName, 0, 0, true, 0, -50, false)
-        }
+    onKeyboardInput(playerName, keyCode, _down, _posX, _posY) {
+        if (keyCode === 0x20)
+            nm.movePlayer(playerName, 0, 0, true, 0, -50, false)
     }
 }

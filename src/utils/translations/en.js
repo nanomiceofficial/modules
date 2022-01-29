@@ -1,47 +1,47 @@
 export default {
-    home: `Home`,
+    home: 'Home',
 
     // UI
     ui: {
-        name: "UI",
-        description: "Provides an user interface for managing the room.",
-        players: `Players`,
-        owner: `Owner`,
-        addRights: `Not admin`,
-        removeRights: `Admin`,
-        plugins: `Plugins`,
-        close: `Close`,
-        enable: "Enable",
-        disable: "Disable",
-        disclaimer: "This is an experimental module.",
-        addedAdmin: "Player <V>{0}</V> is now an admin.",
-        removedAdmin: "Player <V>{0}</V> is no longer an admin.",
-        pluginEnabled: "Plugin <N>{0}</N> has been enabled.",
-        pluginDisabled: "Plugin <N>{0}</N> has been disabled.",
-        forbidden: "<R>You are not in the list of room administrators.."
+        name: 'UI',
+        description: 'Provides an user interface for managing the room.',
+        players: 'Players',
+        owner: 'Owner',
+        addRights: 'Not admin',
+        removeRights: 'Admin',
+        plugins: 'Plugins',
+        close: 'Close',
+        enable: 'Enable',
+        disable: 'Disable',
+        disclaimer: 'This is an experimental module.',
+        addedAdmin: 'Player <V>{0}</V> is now an admin.',
+        removedAdmin: 'Player <V>{0}</V> is no longer an admin.',
+        pluginEnabled: 'Plugin <N>{0}</N> has been enabled.',
+        pluginDisabled: 'Plugin <N>{0}</N> has been disabled.',
+        forbidden: '<R>You are not in the list of room administrators..'
     },
 
     hello: {
-        name: "Friend",
-        description: "Greets those who enter the room and says goodbye to those who went out.",
-        joinedRoom: `<V>{0}</V> joined the room.`,
-        leftRoom: `<V>{0}</V> left the room.`
+        name: 'Friend',
+        description: 'Greets those who enter the room and says goodbye to those who went out.',
+        joinedRoom: '<V>{0}</V> joined the room.',
+        leftRoom: '<V>{0}</V> left the room.'
     },
 
     fly: {
-        name: "Fly",
-        description: "Fly by spacebar."
+        name: 'Fly',
+        description: 'Fly by spacebar.'
     },
 
     deathmatch: {
-        name: "Deathmatch",
-        description: "Cannon battle. You can change position of cannon with !off command, and you can change cannon with !ct command.",
-        offset: "Offset: X {0} | Y {1}",
-        use: "Use: {0}"
+        name: 'Deathmatch',
+        description: 'Cannon battle. You can change position of cannon with !off command, and you can change cannon with !ct command.',
+        offset: 'Offset: X {0} | Y {1}',
+        use: 'Use: {0}'
     },
 
     commandor: {
-        name: "Commandor",
+        name: 'Commandor',
         description: `Provides some useful commands for room, which only admin can use:
 1. !message Message - send message from room.
 2. !new bootcamp/vanilla/racing/defilante/tribe/survivor/village - start next map by type.
@@ -57,6 +57,6 @@ export default {
 12. !gravity Seconds Number - set gravity. 
 13. !meep Nickname - give meep to player.
 14. !kill Nickname - kill player. `,
-        autorespawn: "Autorespawn: {0}"
+        autorespawn: 'Autorespawn: {0}'
     }
 }

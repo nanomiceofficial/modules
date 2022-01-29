@@ -1,16 +1,22 @@
-import Home from "./home"
+import Home from './home'
 
-import UI from "./plugins/ui"
-import Hello from "./plugins/hello"
-import Fly from "./plugins/fly"
-import Deathmatch from "./plugins/deathmatch"
-import Commandor from "./plugins/commandor"
+import UI from './plugins/ui'
+import Hello from './plugins/hello'
+import Fly from './plugins/fly'
+import Deathmatch from './plugins/deathmatch'
+import Commandor from './plugins/commandor'
 
-let home = new Home({
+const home = new Home({
     ui: {
-        mapName: "Home"
+        mapName: 'Home'
     },
-    plugins: [new UI(), new Hello(), new Fly(), new Deathmatch({ enabled: false }), new Commandor()]
+    plugins: [
+        new UI(),
+        new Hello(),
+        new Fly(),
+        new Deathmatch({ enabled: false }),
+        new Commandor()
+    ]
 })
 
-register("home", home.getScript(), true)
+register('home', home.getModule(), true)

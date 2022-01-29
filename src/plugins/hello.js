@@ -1,20 +1,22 @@
-import Plugin from "./plugin"
-import Locale from "../utils/locale"
+import Plugin from './plugin'
+import locale from '../utils/locale'
+import { format } from '../utils/format'
 
-let defaultOptions = {}
+const defaultOptions = {}
+
 export default class Hello extends Plugin {
     constructor(options) {
         super(options)
 
-        this.name = "hello"
+        this.name = 'hello'
         this.options = { ...options, ...defaultOptions }
     }
 
-    eventNewPlayer(playerName) {
-        nm.ChatMessage(nm.Extensions.Format(Locale.get("hello/joinedRoom", Locale.type.all), playerName))
+    onNewPlayer(playerName) {
+        nm.chatMessage(format(locale.get('hello/joinedRoom', locale.type.all), playerName))
     }
 
-    eventPlayerLeft(playerName) {
-        nm.ChatMessage(nm.Extensions.Format(Locale.get("hello/leftRoom", Locale.type.all), playerName))
+    onPlayerLeft(playerName) {
+        nm.chatMessage(format(locale.get('hello/leftRoom', locale.type.all), playerName))
     }
 }
