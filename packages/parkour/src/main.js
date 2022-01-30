@@ -11,16 +11,16 @@ const colors = {
 function formatCheckpoint(id, checkpoint, playerInfo) {
     // Первый чекпоинт стартовый, на нем не считаем время.
     if (parseInt(id) === 0)
-        return `<b>${id}</b><a href="event:spawn_${id}"><img align='center' src='https://nanomice.eu/s/images/user/modules/parkour/np_p.png' alt='' hspace="5" vspace="0"/></a>`
+        return `<b>${id}</b><a href="event:spawn_${id}"><img align='center' src='https://nanomice.eu/s/images/user/modules/parkour/np_p.png' alt='' hspace="0" vspace="5"/></a>`
 
     const playerScore = playerInfo.score[id] ? (playerInfo.score[id] / 1000).toFixed(2) : undefined
     const lastRecord = checkpoint.records ? checkpoint.records[checkpoint.records.length - 1] : undefined
 
     const timeContent = `${playerScore ? ' ' + playerScore : ''}${lastRecord ? ` ${(lastRecord.time / 1000).toFixed(2)} (${lastRecord.playerName})` : ''}`
     if (playerScore)
-        return `<b>${id}</b>${timeContent}<a href="event:spawn_${id}"><img align='center' src='https://nanomice.eu/s/images/user/modules/parkour/np_p.png' alt='' hspace="5" vspace="0"/></a>`
+        return `<b>${id}</b>${timeContent}<a href="event:spawn_${id}"><img align='center' src='https://nanomice.eu/s/images/user/modules/parkour/np_p.png' alt='' hspace="0" vspace="5"/></a>`
 
-    return `<b>${id}</b>${timeContent}<img align='center' src='https://nanomice.eu/s/images/user/modules/parkour/p_p.png' alt='' hspace="5" vspace="0"/>`
+    return `<b>${id}</b>${timeContent}<img align='center' src='https://nanomice.eu/s/images/user/modules/parkour/p_p.png' alt='' hspace="0" vspace="5"/>`
 }
 
 class Main {
@@ -28,6 +28,7 @@ class Main {
 
     mapId = -1
     mapData = undefined
+    started = false
 
     render(playerName) {
         if (!this.mapData)
@@ -75,8 +76,6 @@ class Main {
 
         for (const player of nm.room.getPlayers())
             this.onNewPlayer(player.name, true)
-
-        nm.newGame('#78')
     }
 
     onUnregister() {
@@ -524,7 +523,10 @@ class Main {
     }
 
     onLoop(time, remaining) {
-
+        if (!this.started) {
+            nm.newGame('#78')
+            this.started = true
+        }
     }
 }
 
