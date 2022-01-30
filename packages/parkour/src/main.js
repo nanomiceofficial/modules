@@ -163,8 +163,15 @@ class Main {
         // Обновляем картинку.
         this.render(playerName)
 
-        if (!init)
+        if (!init) {
+            nm.chatMessage(coloredText(
+                    colors.self,
+                    `〢 <BL>${playerName}</BL>, добро пожаловать в #parkour. Используйте клавишу G для возрождения на последнем пройденном чекпоинте, либо кликните мышью на любой, пройденный ранее (но ваш прогресс будет сброшен!).`),
+                playerName
+            )
+
             this.onPlayerDied(playerName)
+        }
     }
 
     onPlayerDied(playerName) {
@@ -377,9 +384,9 @@ class Main {
 
                         nm.chatMessage(coloredText(
                             colors.self,
-                            `〢 Рекорды карты: \n${data}`,
+                            `〢 Рекорды карты: \n${data}`),
                             playerName
-                        ))
+                        )
                     }
                 }
                 break
@@ -405,9 +412,9 @@ class Main {
 
                     nm.chatMessage(coloredText(
                         colors.self,
-                        `〢 Чекпоинты карты: \n${data}`,
+                        `〢 Чекпоинты карты: \n${data}`),
                         playerName
-                    ))
+                    )
                 }
                 break
             case 'checkpoint_records': {
@@ -428,9 +435,9 @@ class Main {
 
                     nm.chatMessage(coloredText(
                         colors.self,
-                        `〢 Рекорды чекпоинта №${checkpointID}: \n${data}`,
+                        `〢 Рекорды чекпоинта №${checkpointID}: \n${data}`),
                         playerName
-                    ))
+                    )
                 }
                 break
             }
