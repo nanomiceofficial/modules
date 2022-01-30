@@ -54,7 +54,7 @@ class Main {
                     playerName,
                     checkpoint.x - 33,
                     checkpoint.y - 75,
-                    150,
+                    300,
                     150,
                     0.001,
                     0.001,
@@ -88,6 +88,9 @@ class Main {
     }
 
     onNewGame() {
+        if (!this.started)
+            return
+
         // Обновляем данные у игроков при respawn'е в начале игры.
         for (const [playerName, playerInfo] of Object.entries(this.playerInfos)) {
             playerInfo.startAt = unix()
@@ -281,16 +284,17 @@ class Main {
                     break
 
                 const time = unix() - playerInfo.startAt
-                if (checkpoint.records && checkpoint.records.length > 0) {
-                    const lastRecord = checkpoint.records[checkpoint.records.length - 1]
-                    if (time < lastRecord.time) {
-                        nm.chatMessage(coloredText(
-                                colors.self,
-                                `〢 <BL>${playerName}</BL>, вы прошли чекпоинт №${id} быстрее, чем рекордсмен карты на <font color='#C4A7C6'>${((lastRecord.time - time) / 1000).toFixed(2)}</font> сек. Вперёд!`),
-                            playerName
-                        )
-                    }
-                }
+
+                // if (checkpoint.records && checkpoint.records.length > 0) {
+                //     const lastRecord = checkpoint.records[checkpoint.records.length - 1]
+                //     if (time < lastRecord.time) {
+                //         nm.chatMessage(coloredText(
+                //                 colors.self,
+                //                 `〢 <BL>${playerName}</BL>, вы прошли чекпоинт №${id} быстрее, чем рекордсмен карты на <font color='#C4A7C6'>${((lastRecord.time - time) / 1000).toFixed(2)}</font> сек. Вперёд!`),
+                //             playerName
+                //         )
+                //     }
+                // }
 
                 playerInfo.score.push(time)
                 playerInfo.startAt = unix()
