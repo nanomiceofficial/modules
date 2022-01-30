@@ -159,7 +159,7 @@ class Main {
             textAreas: { checkpoints: [] }
         }
 
-        for (const keyCode of [71, 82, 32])
+        for (const keyCode of [71, 32])
             nm.bindKeyboard(playerName, keyCode, true, true)
 
         // Обновляем картинку.
@@ -262,7 +262,6 @@ class Main {
             return
 
         switch (keyCode) {
-            case 82: // R
             case 71: // G
                 nm.killPlayer(playerName)
                 break

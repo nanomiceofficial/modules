@@ -73,8 +73,8 @@ declare interface INMRoom {
     name: string
     communityName: string
 
-    setUsername(from: string, to: string): void
-    setLook(playerName: string, look: string): void
+    setUsername(from?: string, to?: string): void
+    setLook(playerName?: string, look?: string): void
     getMap(): IMap
     getPlayer(playerName: string): IPlayer | undefined
     getPlayers(): IPlayer[]
@@ -92,11 +92,11 @@ declare interface INMStorage {
 
 declare interface INMSystem {
     bindMouse(playerName: string, value?: boolean): void
-    disableChatCommandDisplay(command: string, value): void
+    disableChatCommandDisplay(command: string, value?: boolean): void
 }
 
 declare interface INMUI {
-    addPopup(id: number, type: string, text: string, posX: number, posY: number, width: number,
+    addPopup(id: number, type: number, text: string, posX: number, posY: number, width: number,
              fixedPos: boolean, playerName: string): void
     addTextArea(id: number, text: string, playerName: string, posX: number, posY: number, width: number, height: number,
                 backgroundColor: number, borderColor: number, backgroundAlpha: number, fixedPos: boolean): void
