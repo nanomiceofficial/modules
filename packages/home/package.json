@@ -2,7 +2,7 @@
   "name": "nanomice-home",
   "version": "1.0.0",
   "description": "NanoMice home module",
-  "main": "src/main.js",
+  "main": "packages/home/src/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "rollup -cw",

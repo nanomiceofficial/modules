@@ -14,7 +14,7 @@ export default {
         babel({
             babelrc: false,
             presets: ["@babel/preset-env"],
-            plugins: [["@babel/plugin-transform-classes", {loose: true}]]
+            plugins: [["@babel/plugin-transform-classes", { loose: true }]]
         }),
         terser()
     ]
