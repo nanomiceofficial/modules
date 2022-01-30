@@ -1,1 +1,1 @@
-export const moderators = ['Kikree']
+export const moderators = ['Kikree', 'Nakoman', 'Anonumka', 'Toychice', 'Fefur', 'Fwex']

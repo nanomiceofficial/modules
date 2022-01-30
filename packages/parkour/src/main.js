@@ -69,6 +69,7 @@ class Main {
         for (const command of ['next', 'save', 'records', 'remove_record', 'checkpoints', 'checkpoints_records', 'checkpoint_remove_record', 'checkpoint_remove', 'checkpoint_add'])
             nm.system.disableChatCommandDisplay(command, true)
 
+        nm.disableAutoNewGame()
         nm.disableAutoShaman()
         nm.disableAutoScore()
         nm.disableStartTimer()
@@ -538,6 +539,10 @@ class Main {
             nm.newGame('#78')
             this.started = true
         }
+
+        // Unsigned int. FIXME: починить.
+        if (remaining >= 100000000)
+            nm.newGame('#78')
     }
 }
 
