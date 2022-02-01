@@ -346,7 +346,7 @@ class Main {
         // Обновляем отображение рекордов у всех!
         if (renderRequired)
             for (const otherPlayerName of Object.keys(this.playerInfos))
-                this.render(otherPlayerName, true)
+                this.render(otherPlayerName)
     }
 
     onKeyboardInput(playerName, keyCode, down, posX, posY) {
