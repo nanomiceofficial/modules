@@ -38,7 +38,6 @@ class Main {
         if (!playerInfo)
             return
 
-        // Удаляем старые чекпоинты.
         for (const id of playerInfo.textAreas.checkpoints)
             nm.ui.removeTextArea(parseInt(id), playerName)
         playerInfo.textAreas.checkpoints = []
@@ -65,8 +64,64 @@ class Main {
         }
     }
 
+    handleCheckpoints(playerName, posX, posY) {
+        // Если нет чекпоинтов, то и нечего обрабатывать.
+        if (!this.mapData.checkpoints)
+            return
+
+        const playerInfo = this.playerInfos[playerName]
+        if (!playerInfo)
+            return
+
+        // Все чекпоинты взял, значит ничего уже не нужно.
+        if (playerInfo.score.length >= this.mapData.checkpoints.length)
+            return
+
+        const id = playerInfo.score.length
+        const checkpoint = this.mapData.checkpoints[id]
+        if (Math.abs(checkpoint.x - posX) > 33 || Math.abs(checkpoint.y - posY) > 33)
+            return
+
+        const time = unix() - playerInfo.startAt
+
+        playerInfo.score.push(time)
+        playerInfo.startAt = unix()
+
+        // Помечаем портал пройденным.
+        nm.ui.updateTextArea(
+            id,
+            formatCheckpoint(id, checkpoint, playerInfo),
+            playerName
+        )
+    }
+
+    gotoLast(playerName) {
+        const playerInfo = this.playerInfos[playerName]
+        if (!playerInfo)
+            return
+
+        const player = nm.room.getPlayer(playerName)
+        if (player.isDead || player.isInHole)
+            nm.respawnPlayer(playerName)
+
+        if (player.hasCheese)
+            nm.takeCheese(playerName)
+
+        if (this.mapData.checkpoints) {
+            if (playerInfo.score.length > 0) {
+                const checkpoint = this.mapData.checkpoints[playerInfo.score.length - 1]
+                if (checkpoint)
+                    nm.movePlayer(playerName, checkpoint.x, checkpoint.y, 0, 0, 0, 0)
+            }
+        }
+
+        playerInfo.startAt = unix()
+    }
+
     onRegister() {
-        for (const command of ['next', 'save', 'records', 'remove_record', 'checkpoints', 'checkpoints_records', 'checkpoint_remove_record', 'checkpoint_remove', 'checkpoint_add'])
+        for (const command of ['next', 'save', 'wipe_checkpoints', 'wipe_records',
+            'records', 'remove_record', 'checkpoints',
+            'checkpoints_records', 'checkpoint_remove_record', 'checkpoint_remove', 'checkpoint_add'])
             nm.system.disableChatCommandDisplay(command, true)
 
         nm.disableAutoNewGame()
@@ -74,6 +129,7 @@ class Main {
         nm.disableAutoScore()
         nm.disableStartTimer()
         nm.disableItems()
+        nm.disableAFKDeath()
 
         for (const player of nm.room.getPlayers())
             this.onNewPlayer(player.name, true)
@@ -82,6 +138,7 @@ class Main {
     onUnregister() {
         // Обновляем данные у игроков при respawn'е в начале игры.
         for (const [playerName, playerInfo] of Object.entries(this.playerInfos)) {
+            nm.ui.removeTextArea(9998, playerName)
             for (const id of playerInfo.textAreas.checkpoints)
                 nm.ui.removeTextArea(parseInt(id), playerName)
             playerInfo.textAreas = { checkpoints: [] }
@@ -96,6 +153,7 @@ class Main {
         for (const [playerName, playerInfo] of Object.entries(this.playerInfos)) {
             playerInfo.startAt = unix()
             playerInfo.score = [0]
+            // Убираем старые чекпоинты.
             for (const id of playerInfo.textAreas.checkpoints)
                 nm.ui.removeTextArea(parseInt(id), playerName)
             playerInfo.textAreas = { checkpoints: [] }
@@ -114,21 +172,22 @@ class Main {
         const map = nm.room.getMap()
         if (map.username !== '') {
             this.mapId = map.id
-            if (nm.storage.has('parkour', 'map_data', map.id.toString())) {
-                nm.chatMessage(coloredText(colors.global, `〢 Информация о карте @${map.id} загружена.`))
-                this.mapData = JSON.parse(
-                    nm.storage.get('parkour', 'map_data', map.id.toString())
-                )
-            } else {
+            if (nm.storage.has('parkour', 'map_data', map.id.toString()))
+                this.mapData = JSON.parse(nm.storage.get('parkour', 'map_data', map.id.toString()))
+            else {
                 nm.chatMessage(coloredText(colors.global, `〢 Информация о карте @${map.id} не найдена.`))
-                this.mapData = {}
+
+                this.mapData = {
+                    checkpoints: [],
+                    records: []
+                }
             }
         }
 
         nm.setUIMapName(coloredText(colors.global, 'Parkour - season 1'))
         nm.setGameTime(300)
 
-        if (this.mapData?.records && this.mapData.records.length > 0) {
+        if (this.mapData.records && this.mapData.records.length > 0) {
             const lastRecord = this.mapData.records[this.mapData.records.length - 1]
 
             const date = new Date(lastRecord.createdAt)
@@ -146,11 +205,17 @@ class Main {
 
         // Возрождаем всех!
         for (const player of nm.room.getPlayers())
-            this.onPlayerDied(player.name)
+            this.gotoLast(player.name)
     }
 
     onNewPlayer(playerName, init) {
         nm.setUIMapName(coloredText(colors.global, 'Parkour - season 1'), playerName)
+        nm.ui.addTextArea(
+            9998,
+            '<a href="event:restart">Начать сначала</a>',
+            playerName,
+            695, 372, 100, 18, 0, 0, 0.5, false
+        )
 
         // Раздеваем мышку. (как в bootcamp)
         nm.room.setLook(playerName, '1;0,0,0,0')
@@ -161,7 +226,7 @@ class Main {
             textAreas: { checkpoints: [] }
         }
 
-        for (const keyCode of [71, 32])
+        for (const keyCode of [71, 65, 68, 83, 87, 37, 38, 39, 40])
             nm.bindKeyboard(playerName, keyCode, true, true)
 
         // Обновляем картинку.
@@ -170,51 +235,54 @@ class Main {
         if (!init) {
             nm.chatMessage(coloredText(
                     colors.self,
-                    `〢 <BL>${playerName}</BL>, добро пожаловать в #parkour. Используйте клавишу G для возрождения на последнем пройденном чекпоинте, либо кликните мышью на любой, пройденный ранее (но ваш прогресс будет утерян!). Время между последним чекпоинтом и входом в нору учтено не будет.`),
+                    `〢 <BL>${playerName}</BL>, добро пожаловать в #parkour!`
+                ),
                 playerName
             )
 
-            this.onPlayerDied(playerName)
+            nm.chatMessage(coloredText(
+                    colors.self,
+                    `〢 <BL>${playerName}</BL>, пройденные чекпоинты активируются автоматически, но если вам важно время, вы можете нажать любую из клавиш движения около него для мгновенной активации (WASD, стрелочки). Используйте клавишу G для возрождения на последний пройденный чекпоинт, либо кликните мышью на любой, пройденный ранее (но ваш прогресс будет утерян!)`
+                ),
+                playerName
+            )
+
+            this.gotoLast(playerName)
         }
     }
 
     onPlayerDied(playerName) {
+        this.gotoLast(playerName)
+    }
+
+    onPlayerWon(playerName) {
         const playerInfo = this.playerInfos[playerName]
         if (!playerInfo)
             return
 
-        nm.respawnPlayer(playerName)
-        if (playerInfo.score?.length > 0) {
-            const checkpoint = this.mapData.checkpoints[playerInfo.score.length - 1]
-            nm.movePlayer(playerName, checkpoint.x, checkpoint.y, 0, 0, 0, 0)
-        }
-        playerInfo.startAt = unix()
-    }
-
-    onPlayerWon(playerName) {
-        // Тут мы учитываем только если прошел через все чекпоинты.
-        const playerInfo = this.playerInfos[playerName]
-        if (!playerInfo || !this.mapData?.checkpoints)
+        // Если нет чекпоинтов, то и рекордов, значит ниже не идем.
+        if (!this.mapData.checkpoints) {
+            this.gotoLast(playerName)
             return
+        }
 
         if (playerInfo.score.length !== this.mapData.checkpoints.length) {
             nm.chatMessage(coloredText(
-                colors.self,
-                `〢 <BL>${playerName}</BL>, вы упустили один из чекпоинтов, поэтому ваша статистика не будет учтена.`),
+                    colors.self,
+                    `〢 <BL>${playerName}</BL>, вы упустили один из чекпоинтов, поэтому ваша статистика не будет учтена.`
+                ),
                 playerName
             )
-            this.onPlayerDied(playerName)
+            this.gotoLast(playerName)
             return
         }
 
-        // Количество побитых рекордов чекпоинтов.
-        let bestCheckpointsAmount = 0
-        let totalTime = 0
+        let totalTime = unix() - playerInfo.startAt
         for (const [id, time] of Object.entries(playerInfo.score)) {
             totalTime += time
 
             const checkpoint = this.mapData.checkpoints[id]
-            if (checkpoint.records) {
+            if (checkpoint.records && checkpoint.records.length > 0) {
                 const lastRecord = checkpoint.records[checkpoint.records.length - 1]
                 if (time < lastRecord.time) {
                     checkpoint.records.push({
@@ -222,21 +290,26 @@ class Main {
                         time,
                         createdAt: unix()
                     })
-                    bestCheckpointsAmount++
                 }
-            } else {
+            } else
                 checkpoint.records = [{ playerName, time, createdAt: unix() }]
-                bestCheckpointsAmount++
-            }
         }
 
         nm.chatMessage(coloredText(
                 colors.self,
-                `〢 <BL>${playerName}</BL>, ваше суммарное время прохождение карты составило: <font color='#C4A7C6'>${(totalTime / 1000).toFixed(2)}</font> сек.`),
+                `〢 <BL>${playerName}</BL>, вы прошли карту за <font color='#C4A7C6'>${(totalTime / 1000).toFixed(2)}</font> сек.`
+            ),
             playerName
         )
 
-        if (this.mapData.records) {
+        const announceNewRecord = () => {
+            nm.chatMessage(coloredText(
+                colors.global,
+                `〢 <BL>${playerName}</BL> установил новый рекорд прохождения карты: <font color='#C4A7C6'>${(totalTime / 1000).toFixed(2)}</font> сек.`
+            ))
+        }
+
+        if (this.mapData.records && this.mapData.records.length > 0) {
             const lastRecord = this.mapData.records[this.mapData.records.length - 1]
             if (totalTime < lastRecord.time) {
                 this.mapData.records.push({
@@ -245,10 +318,7 @@ class Main {
                     createdAt: unix()
                 })
 
-                nm.chatMessage(coloredText(
-                    colors.global,
-                    `〢 <BL>${playerName}</BL> установил новый рекорд прохождения карты: <font color='#C4A7C6'>${(totalTime / 1000).toFixed(2)}</font> сек.`
-                ))
+                announceNewRecord()
             }
         } else {
             this.mapData.records = [{
@@ -257,55 +327,26 @@ class Main {
                 createdAt: unix()
             }]
 
-            nm.chatMessage(coloredText(
-                colors.global,
-                `〢 <BL>${playerName}</BL> установил новый рекорд прохождения карты: <font color='#C4A7C6'>${(totalTime / 1000).toFixed(2)}</font> сек.`
-            ))
+            announceNewRecord()
         }
-        this.onPlayerDied(playerName)
+
+        this.gotoLast(playerName)
     }
 
     onKeyboardInput(playerName, keyCode, down, posX, posY) {
-        const playerInfo = this.playerInfos[playerName]
-        if (!playerInfo)
-            return
-
         switch (keyCode) {
             case 71: // G
-                nm.killPlayer(playerName)
+                this.gotoLast(playerName)
                 break
-            case 32: // Space
-                // Все чекпоинты взял, значит ничего уже не нужно.
-                if (playerInfo.score.length >= this.mapData.checkpoints.length)
-                    break
-
-                const id = playerInfo.score.length
-                const checkpoint = this.mapData.checkpoints[id]
-                if (Math.abs(checkpoint.x - posX) > 33 || Math.abs(checkpoint.y - posY) > 33)
-                    break
-
-                const time = unix() - playerInfo.startAt
-
-                // if (checkpoint.records && checkpoint.records.length > 0) {
-                //     const lastRecord = checkpoint.records[checkpoint.records.length - 1]
-                //     if (time < lastRecord.time) {
-                //         nm.chatMessage(coloredText(
-                //                 colors.self,
-                //                 `〢 <BL>${playerName}</BL>, вы прошли чекпоинт №${id} быстрее, чем рекордсмен карты на <font color='#C4A7C6'>${((lastRecord.time - time) / 1000).toFixed(2)}</font> сек. Вперёд!`),
-                //             playerName
-                //         )
-                //     }
-                // }
-
-                playerInfo.score.push(time)
-                playerInfo.startAt = unix()
-
-                // Помечаем портал пройденным.
-                nm.ui.updateTextArea(
-                    id,
-                    formatCheckpoint(id, checkpoint, playerInfo),
-                    playerName
-                )
+            case 65: // A
+            case 68: // D
+            case 83: // S
+            case 87: // W
+            case 37: // Left
+            case 38: // Up
+            case 39: // Right
+            case 40: // Down
+                this.handleCheckpoints(playerName, posX, posY)
                 break
         }
     }
@@ -325,6 +366,11 @@ class Main {
         const args = callback.split('_')
 
         switch (args[0]) {
+            case 'restart':
+                playerInfo.score = [0]
+                this.render(playerName)
+                this.gotoLast(playerName)
+                break
             case 'spawn':
                 if (args.length !== 2)
                     break
@@ -339,36 +385,42 @@ class Main {
                     this.render(playerName)
                 }
 
-                if (this.mapData?.checkpoints?.length > id) {
-                    playerInfo.startAt = unix()
-
-                    const checkpoint = this.mapData.checkpoints[id]
-                    nm.respawnPlayer(playerName)
-                    nm.movePlayer(playerName, checkpoint.x, checkpoint.y, 0, 0, 0, 0)
-                }
-
+                this.gotoLast(playerName)
                 break
         }
     }
 
-    onChatCommand(playerName, command) {
-        if (command === '')
+    onLoop(time, remaining) {
+        if (!this.started) {
+            nm.newGame('#78')
+            this.started = true
             return
+        }
 
+        // Unsigned int.
+        if (remaining >= 100000000)
+            nm.newGame('#78')
+
+        for (const player of nm.room.getPlayers())
+            this.handleCheckpoints(player.name, player.x, player.y)
+    }
+
+    onChatCommand(playerName, command) {
+        const args = command.split(' ')
+
+        // Команды только для модераторов ниже.
         if (!moderators.includes(playerName))
             return
 
-        // Комманды только для модераторов здесь.
-        const args = command.split(' ')
-
+        // region Команды
         switch (args[0]) {
             case 'next':
                 // Если предыдущая карта была обработана нами.
                 if (this.mapId !== 0) {
                     // Обновляем информацию о предыдущей карте.
                     nm.storage.set('parkour', 'map_data', this.mapId.toString(), JSON.stringify(this.mapData))
-                    nm.chatMessage(`Карта сохранена.`, playerName)
                 }
+
                 nm.newGame('#78')
                 break
             case 'save':
@@ -376,9 +428,24 @@ class Main {
                 if (this.mapId !== 0) {
                     // Обновляем информацию о предыдущей карте.
                     nm.storage.set('parkour', 'map_data', this.mapId.toString(), JSON.stringify(this.mapData))
-
                     nm.chatMessage(`Карта сохранена.`, playerName)
                 }
+                break
+            case 'wipe_checkpoints':
+                delete this.mapData['checkpoints']
+
+                // Обновляем картинку у всех.
+                for (const otherPlayerName of Object.keys(this.playerInfos))
+                    this.render(otherPlayerName)
+                break
+            case 'wipe_records':
+                delete this.mapData['records']
+                for (const checkpoint of this.mapData.checkpoints)
+                    delete checkpoint['records']
+
+                // Обновляем картинку у всех.
+                for (const otherPlayerName of Object.keys(this.playerInfos))
+                    this.render(otherPlayerName)
                 break
             case 'records':
                 if (this.mapData) {
@@ -388,8 +455,8 @@ class Main {
                             data += `№${id} - time: ${record.time}, by: ${record.playerName}, createdAt: ${new Date(record.createdAt)}\n`
 
                         nm.chatMessage(coloredText(
-                            colors.self,
-                            `〢 Рекорды карты: \n${data}`),
+                                colors.self,
+                                `〢 Рекорды карты: \n${data}`),
                             playerName
                         )
                     }
@@ -416,8 +483,8 @@ class Main {
                         data += `№${id} - x: ${checkpoint.x}, y: ${checkpoint.y}\n`
 
                     nm.chatMessage(coloredText(
-                        colors.self,
-                        `〢 Чекпоинты карты: \n${data}`),
+                            colors.self,
+                            `〢 Чекпоинты карты: \n${data}`),
                         playerName
                     )
                 }
@@ -428,7 +495,7 @@ class Main {
 
                 const checkpointID = parseInt(args[1])
 
-                if (this.mapData && this.mapData.checkpoints && this.mapData.checkpoints[checkpointID]) {
+                if (this.mapData.checkpoints && this.mapData.checkpoints[checkpointID]) {
                     const checkpoint = this.mapData.checkpoints[checkpointID]
 
                     let data = ''
@@ -439,8 +506,8 @@ class Main {
                         data += `- №${rId} - time: ${record.time}, by: ${record.playerName}, createdAt: ${new Date(record.createdAt)}\n`
 
                     nm.chatMessage(coloredText(
-                        colors.self,
-                        `〢 Рекорды чекпоинта №${checkpointID}: \n${data}`),
+                            colors.self,
+                            `〢 Рекорды чекпоинта №${checkpointID}: \n${data}`),
                         playerName
                     )
                 }
@@ -453,20 +520,18 @@ class Main {
                 const checkpointID = parseInt(args[1])
                 const recordID = parseInt(args[2])
 
-                if (this.mapData) {
-                    if (this.mapData.checkpoints) {
-                        const checkpoint = this.mapData.checkpoints[checkpointID]
-                        if (!checkpoint)
-                            break
+                if (this.mapData.checkpoints) {
+                    const checkpoint = this.mapData.checkpoints[checkpointID]
+                    if (!checkpoint)
+                        break
 
-                        if (checkpoint.records && checkpoint.records[recordID]) {
-                            checkpoint.records.splice(recordID, 1)
+                    if (checkpoint.records && checkpoint.records[recordID]) {
+                        checkpoint.records.splice(recordID, 1)
 
-                            // Обновляем картинку у всех.
-                            for (const otherPlayerName of Object.keys(this.playerInfos))
-                                this.render(otherPlayerName)
-                            break
-                        }
+                        // Обновляем картинку у всех.
+                        for (const otherPlayerName of Object.keys(this.playerInfos))
+                            this.render(otherPlayerName)
+                        break
                     }
                 }
                 break
@@ -475,19 +540,17 @@ class Main {
                     return
 
                 const id = parseInt(args[1])
-                if (this.mapData) {
-                    if (this.mapData.checkpoints)
-                        if (this.mapData.checkpoints.length > id) {
-                            this.mapData.checkpoints.splice(id, 1)
+                if (this.mapData.checkpoints)
+                    if (this.mapData.checkpoints.length > id) {
+                        this.mapData.checkpoints.splice(id, 1)
 
-                            nm.chatMessage(`Чекпоинт №${id} удален.
+                        nm.chatMessage(`Чекпоинт №${id} удален.
                             `, playerName)
-                        }
+                    }
 
-                    // Обновляем картинку у всех при удалении.
-                    for (const otherPlayerName of Object.keys(this.playerInfos))
-                        this.render(otherPlayerName)
-                }
+                // Обновляем картинку у всех при удалении.
+                for (const otherPlayerName of Object.keys(this.playerInfos))
+                    this.render(otherPlayerName)
                 break
             case 'checkpoint_add':
                 let x, y
@@ -504,45 +567,31 @@ class Main {
                 if (args.length >= 4)
                     order = parseInt(args[3])
 
-                console.log(this.mapData)
                 let index = -1
-                if (this.mapData) {
-                    // Если у карты уже есть чекпоинты, то добавляем.
-                    if (this.mapData.checkpoints) {
-                        if (order !== -1) {
-                            index = order
+                if (this.mapData.checkpoints) {
+                    if (order !== -1) {
+                        index = order
 
-                            // Если нужно поставить в определенную позицию.
-                            if (this.mapData.checkpoints.length > order)
-                                this.mapData.checkpoints.splice(order, 0, { x, y })
-                            else
-                                this.mapData.checkpoints.push({ x, y })
-                        } else
-                            index = this.mapData.checkpoints.push({ x, y })
-                    } else {
-                        index = 0
-                        this.mapData.checkpoints = [{ x, y }]
-                    }
-
-                    if (index !== -1)
-                        nm.chatMessage(`Чекпоинт №${index + 1} добавлен.`, playerName)
-
-                    // Обновляем картинку у всех.
-                    for (const otherPlayerName of Object.keys(this.playerInfos))
-                        this.render(otherPlayerName)
+                        // Если нужно поставить в определенную позицию.
+                        if (this.mapData.checkpoints.length > order)
+                            this.mapData.checkpoints.splice(order, 0, { x, y })
+                        else
+                            this.mapData.checkpoints.push({ x, y })
+                    } else
+                        index = this.mapData.checkpoints.push({ x, y })
+                } else {
+                    index = 0
+                    this.mapData.checkpoints = [{x, y}]
                 }
-        }
-    }
 
-    onLoop(time, remaining) {
-        if (!this.started) {
-            nm.newGame('#78')
-            this.started = true
-        }
+                if (index !== -1)
+                    nm.chatMessage(`Чекпоинт №${index + 1} добавлен.`, playerName)
 
-        // Unsigned int. FIXME: починить.
-        if (remaining >= 100000000)
-            nm.newGame('#78')
+                // Обновляем картинку у всех.
+                for (const otherPlayerName of Object.keys(this.playerInfos))
+                    this.render(otherPlayerName)
+        }
+        // endregion
     }
 }
 
