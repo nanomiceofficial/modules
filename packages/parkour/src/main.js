@@ -30,7 +30,7 @@ class Main {
     mapData = undefined
     started = false
 
-    render(playerName) {
+    render(playerName, full = false) {
         if (!this.mapData)
             return
 
@@ -38,28 +38,34 @@ class Main {
         if (!playerInfo)
             return
 
-        for (const id of playerInfo.textAreas.checkpoints)
-            nm.ui.removeTextArea(parseInt(id), playerName)
-        playerInfo.textAreas.checkpoints = []
+        if (full) {
+            for (const id of playerInfo.textAreas.checkpoints)
+                nm.ui.removeTextArea(parseInt(id), playerName)
+            playerInfo.textAreas.checkpoints = []
+        }
 
         // Рисуем новые, если у карты есть чекпоинты и они загружены.
         if (this.mapData.checkpoints) {
             for (const [id, checkpoint] of Object.entries(this.mapData.checkpoints)) {
-                playerInfo.textAreas.checkpoints.push(id)
+                if (playerInfo.textAreas.checkpoints.includes(id))
+                    nm.ui.updateTextArea(parseInt(id), formatCheckpoint(id, checkpoint, playerInfo), playerName)
+                else {
+                    playerInfo.textAreas.checkpoints.push(id)
 
-                nm.ui.addTextArea(
-                    parseInt(id),
-                    formatCheckpoint(id, checkpoint, playerInfo),
-                    playerName,
-                    checkpoint.x - 33,
-                    checkpoint.y - 75,
-                    300,
-                    150,
-                    0.001,
-                    0.001,
-                    0.001,
-                    true
-                )
+                    nm.ui.addTextArea(
+                        parseInt(id),
+                        formatCheckpoint(id, checkpoint, playerInfo),
+                        playerName,
+                        checkpoint.x - 33,
+                        checkpoint.y - 75,
+                        300,
+                        150,
+                        0.001,
+                        0.001,
+                        0.001,
+                        true
+                    )
+                }
             }
         }
     }
@@ -121,7 +127,8 @@ class Main {
     onRegister() {
         for (const command of ['next', 'save', 'wipe_checkpoints', 'wipe_records',
             'records', 'remove_record', 'checkpoints',
-            'checkpoints_records', 'checkpoint_remove_record', 'checkpoint_remove', 'checkpoint_add'])
+            'checkpoints_records', 'checkpoint_remove_record', 'checkpoint_remove', 'checkpoint_add',
+            'checkpoint_update'])
             nm.system.disableChatCommandDisplay(command, true)
 
         nm.disableAutoNewGame()
@@ -201,7 +208,7 @@ class Main {
 
         // Обновляем картинку у всех.
         for (const playerName of Object.keys(this.playerInfos))
-            this.render(playerName)
+            this.render(playerName, true)
 
         // Возрождаем всех!
         for (const player of nm.room.getPlayers())
@@ -230,7 +237,7 @@ class Main {
             nm.bindKeyboard(playerName, keyCode, true, true)
 
         // Обновляем картинку.
-        this.render(playerName)
+        this.render(playerName, true)
 
         if (!init) {
             nm.chatMessage(coloredText(
@@ -277,6 +284,7 @@ class Main {
             return
         }
 
+        let renderRequired = false
         let totalTime = unix() - playerInfo.startAt
         for (const [id, time] of Object.entries(playerInfo.score)) {
             totalTime += time
@@ -290,9 +298,12 @@ class Main {
                         time,
                         createdAt: unix()
                     })
+                    renderRequired = true
                 }
-            } else
+            } else {
                 checkpoint.records = [{ playerName, time, createdAt: unix() }]
+                renderRequired = true
+            }
         }
 
         nm.chatMessage(coloredText(
@@ -331,6 +342,11 @@ class Main {
         }
 
         this.gotoLast(playerName)
+
+        // Обновляем отображение рекордов у всех!
+        if (renderRequired)
+            for (const otherPlayerName of Object.keys(this.playerInfos))
+                this.render(otherPlayerName, true)
     }
 
     onKeyboardInput(playerName, keyCode, down, posX, posY) {
@@ -436,7 +452,7 @@ class Main {
 
                 // Обновляем картинку у всех.
                 for (const otherPlayerName of Object.keys(this.playerInfos))
-                    this.render(otherPlayerName)
+                    this.render(otherPlayerName, true)
                 break
             case 'wipe_records':
                 delete this.mapData['records']
@@ -550,7 +566,8 @@ class Main {
 
                 // Обновляем картинку у всех при удалении.
                 for (const otherPlayerName of Object.keys(this.playerInfos))
-                    this.render(otherPlayerName)
+                    this.render(otherPlayerName, true)
+
                 break
             case 'checkpoint_add':
                 let x, y
@@ -581,7 +598,7 @@ class Main {
                         index = this.mapData.checkpoints.push({ x, y })
                 } else {
                     index = 0
-                    this.mapData.checkpoints = [{x, y}]
+                    this.mapData.checkpoints = [{ x, y }]
                 }
 
                 if (index !== -1)
@@ -589,7 +606,34 @@ class Main {
 
                 // Обновляем картинку у всех.
                 for (const otherPlayerName of Object.keys(this.playerInfos))
-                    this.render(otherPlayerName)
+                    this.render(otherPlayerName, true)
+
+                break
+            case 'checkpoint_update': {
+                if (args.length < 2)
+                    return
+
+                const id = parseInt(args[1])
+
+                let x, y
+                if (args.length >= 4) {
+                    x = parseInt(args[1])
+                    y = parseInt(args[2])
+                } else {
+                    const player = nm.room.getPlayer(playerName)
+                    x = player.x
+                    y = player.y
+                }
+
+                const checkpoint = this.mapData.checkpoints[id]
+                checkpoint.x = x
+                checkpoint.y = y
+
+                // Обновляем картинку у всех.
+                for (const otherPlayerName of Object.keys(this.playerInfos))
+                    this.render(otherPlayerName, true)
+                break
+            }
         }
         // endregion
     }
