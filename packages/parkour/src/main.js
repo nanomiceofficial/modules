@@ -30,6 +30,10 @@ class Main {
     mapData = undefined
     started = false
 
+    initialized() {
+        return this.mapData !== undefined
+    }
+
     render(playerName, full = false) {
         if (!this.mapData)
             return
@@ -89,6 +93,8 @@ class Main {
             return
 
         const time = unix() - playerInfo.startAt
+        if (time < 1000)
+            return
 
         playerInfo.score.push(time)
         playerInfo.startAt = unix()
@@ -117,7 +123,7 @@ class Main {
             if (playerInfo.score.length > 0) {
                 const checkpoint = this.mapData.checkpoints[playerInfo.score.length - 1]
                 if (checkpoint)
-                    nm.movePlayer(playerName, checkpoint.x, checkpoint.y, 0, 0, 0, 0)
+                    nm.movePlayer(playerName, checkpoint.x, checkpoint.y, false, 1, 1, false)
             }
         }
 
@@ -233,7 +239,7 @@ class Main {
             textAreas: { checkpoints: [] }
         }
 
-        for (const keyCode of [71, 65, 68, 83, 87, 37, 38, 39, 40])
+        for (const keyCode of [71, 32])
             nm.bindKeyboard(playerName, keyCode, true, true)
 
         // Обновляем картинку.
@@ -249,7 +255,7 @@ class Main {
 
             nm.chatMessage(coloredText(
                     colors.self,
-                    `〢 <BL>${playerName}</BL>, пройденные чекпоинты активируются автоматически, но если вам важно время, вы можете нажать любую из клавиш движения около него для мгновенной активации (WASD, стрелочки). Используйте клавишу G для возрождения на последний пройденный чекпоинт, либо кликните мышью на любой, пройденный ранее (но ваш прогресс будет утерян!)`
+                    `〢 <BL>${playerName}</BL>, пройденные чекпоинты активируются автоматически, но если вам важно время, вы можете активировать чекпоинт мгновенно, нажав «Пробел». Используйте клавишу G для возрождения на последний пройденный чекпоинт, либо кликните мышью на любой, пройденный ранее (но ваш прогресс будет утерян!)`
                 ),
                 playerName
             )
@@ -259,10 +265,16 @@ class Main {
     }
 
     onPlayerDied(playerName) {
+        if (!this.initialized())
+            return
+
         this.gotoLast(playerName)
     }
 
     onPlayerWon(playerName) {
+        if (!this.initialized())
+            return
+
         const playerInfo = this.playerInfos[playerName]
         if (!playerInfo)
             return
@@ -350,18 +362,14 @@ class Main {
     }
 
     onKeyboardInput(playerName, keyCode, down, posX, posY) {
+        if (!this.initialized())
+            return
+
         switch (keyCode) {
             case 71: // G
                 this.gotoLast(playerName)
                 break
-            case 65: // A
-            case 68: // D
-            case 83: // S
-            case 87: // W
-            case 37: // Left
-            case 38: // Up
-            case 39: // Right
-            case 40: // Down
+            case 32: // Space
                 this.handleCheckpoints(playerName, posX, posY)
                 break
         }
@@ -372,7 +380,7 @@ class Main {
     }
 
     onTextAreaCallback(id, playerName, callback) {
-        if (callback === '')
+        if (!this.initialized() || callback === '')
             return
 
         const playerInfo = this.playerInfos[playerName]
@@ -417,15 +425,18 @@ class Main {
         if (remaining >= 100000000)
             nm.newGame('#78')
 
+        if (!this.initialized())
+            return
+
         for (const player of nm.room.getPlayers())
-            this.handleCheckpoints(player.name, player.x, player.y)
+            this.handleCheckpoints(player.name, player.x, player.y, true)
     }
 
     onChatCommand(playerName, command) {
         const args = command.split(' ')
 
         // Команды только для модераторов ниже.
-        if (!moderators.includes(playerName))
+        if (!this.initialized() || !moderators.includes(playerName))
             return
 
         // region Команды
@@ -632,6 +643,7 @@ class Main {
                 // Обновляем картинку у всех.
                 for (const otherPlayerName of Object.keys(this.playerInfos))
                     this.render(otherPlayerName, true)
+
                 break
             }
         }
